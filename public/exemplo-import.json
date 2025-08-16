@@ -1,0 +1,57 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-01-16T10:00:00Z",
+  "catalog": [
+    {
+      "id": "ex-rosca-biceps",
+      "nome": "Rosca Bíceps",
+      "gruposMusculares": ["bíceps"],
+      "equipamento": "halteres",
+      "nivel": "iniciante",
+      "tags": ["hipertrofia"],
+      "instrucoes": [
+        "Fique em pé com um halter em cada mão",
+        "Mantenha os cotovelos próximos ao corpo",
+        "Flexione os braços controladamente",
+        "Desça lentamente até a posição inicial"
+      ],
+      "createdAt": "2025-01-16T10:00:00Z",
+      "updatedAt": "2025-01-16T10:00:00Z"
+    }
+  ],
+  "workouts": [
+    {
+      "id": "wk-biceps-triceps",
+      "nome": "Bíceps e Tríceps",
+      "dataPlanejada": "2025-01-17",
+      "blocos": [
+        {
+          "tipo": "principal",
+          "exercicios": [
+            {
+              "exerciseId": "ex-rosca-biceps",
+              "series": [
+                {
+                  "tipoSerie": "padrão",
+                  "reps": 12,
+                  "cargaKg": 10,
+                  "descansoSeg": 60
+                },
+                {
+                  "tipoSerie": "padrão", 
+                  "reps": 12,
+                  "cargaKg": 10,
+                  "descansoSeg": 60
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "notas": "Treino focado em bíceps",
+      "createdAt": "2025-01-16T10:00:00Z",
+      "updatedAt": "2025-01-16T10:00:00Z"
+    }
+  ],
+  "logs": []
+}

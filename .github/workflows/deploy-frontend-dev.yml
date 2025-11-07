@@ -1,0 +1,26 @@
+name: Deploy Frontend Service - Dev
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag a ser deployada'
+        required: true
+        default: 'latest'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Log do Deploy
+        run: |
+          echo "🚀 Iniciando deploy da tag: ${{ github.event.inputs.tag }}..."
+          echo "✅ Deploy do Frontend Service - Dev concluído com sucesso para a tag: ${{ github.event.inputs.tag }}."

@@ -1,0 +1,49 @@
+name: Executar Deploys Agendados
+
+on:
+  workflow_dispatch:  # permite execução manual
+  schedule:
+    - cron: "0 23 * * *"  # roda todos os dias às 20h no horário de Brasília (UTC-3)
+
+jobs:
+  processar:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar CLI do GitHub
+        uses: cli/cli@v2
+        with:
+          version: latest
+
+      - name: Processar issues com deploy agendado
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "🔍 Buscando issues com label 'deploy-agendado'..."
+          issues=$(gh issue list --label "deploy-agendado" --json number,title,body,state)
+
+          if [ "$(echo $issues | jq length)" -eq 0 ]; then
+            echo "✅ Nenhum deploy agendado encontrado."
+            exit 0
+          fi
+
+          echo "$issues" | jq -c '.[]' | while read issue; do
+            number=$(echo $issue | jq -r '.number')
+            tag=$(echo $issue | jq -r '.body' | grep "tag:" | awk '{print $2}')
+            time=$(echo $issue | jq -r '.body' | grep "schedule_time:" | awk '{print $2}')
+
+            now=$(date -u +%s)
+            end=$(date -d "$time" +%s)
+
+            echo "🕒 Issue #$number → Tag: $tag / Agendado para: $time"
+
+            if [ $now -ge $end ]; then
+              echo "🚀 Executando deploy da tag $tag..."
+              gh workflow run "Deploy Frontend Service - Dev" -f tag="$tag"
+              gh issue close "$number" -c "✅ Deploy executado automaticamente."
+            else
+              echo "⏳ Ainda não é hora do deploy (falta $((end - now)) segundos)."
+            fi
+          done

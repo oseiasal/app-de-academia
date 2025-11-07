@@ -1,0 +1,35 @@
+name: Agendar Deploy (via issue)
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag para deploy (ex: v1.8.0)"
+        required: true
+      date:
+        description: "Data do deploy (YYYY-MM-DD)"
+        required: true
+        default: "2025-11-07"
+      time:
+        description: "Hora do deploy em UTC (HH:mm)"
+        required: true
+        default: "23:30"
+
+jobs:
+  criar_issue:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Criar issue de agendamento
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Deploy agendado - ${context.payload.inputs.tag}`,
+              body: `**Tag:** ${context.payload.inputs.tag}
+              **Horário agendado:** ${context.payload.inputs.date}T${context.payload.inputs.time}:00Z
+              
+              Este deploy será executado automaticamente no horário especificado.`,
+              labels: ['deploy-agendado']
+            });

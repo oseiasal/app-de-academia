@@ -12,8 +12,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Baixar repositório
+      - name: Baixar repositório (usando a tag)
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v3

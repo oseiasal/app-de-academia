@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getRepository } from '../../../../lib/indexeddb';
 import { Workout, Exercise } from '../../../../lib/types';
@@ -11,11 +11,7 @@ export default function PrintWorkoutPage() {
   const [workout, setWorkout] = useState<Workout | null>(null);
   const [exercises, setExercises] = useState<Record<string, Exercise>>({});
 
-  useEffect(() => {
-    fetchWorkoutData();
-  }, [workoutId]);
-
-  const fetchWorkoutData = async () => {
+  const fetchWorkoutData = useCallback(async () => {
     try {
       const repository = await getRepository();
       const workoutData = await repository.getWorkoutById(workoutId);
@@ -42,7 +38,11 @@ export default function PrintWorkoutPage() {
     } catch (error) {
       console.error('Erro ao carregar dados do treino:', error);
     }
-  };
+  }, [workoutId]);
+
+  useEffect(() => {
+    fetchWorkoutData();
+  }, [fetchWorkoutData]);
 
   useEffect(() => {
     // Auto-imprimir quando a página carrega (opcional)

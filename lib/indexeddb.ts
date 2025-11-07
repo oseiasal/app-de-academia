@@ -1,7 +1,15 @@
-import { Exercise, Workout, LogEntry, User } from './types';
+import { Exercise, Workout, LogEntry } from './types';
 
 const DB_NAME = 'AcademiaAppDB';
 const DB_VERSION = 1;
+
+interface ExportData {
+  version: string;
+  exportedAt: string;
+  catalog?: Exercise[];
+  workouts?: Workout[];
+  logs?: LogEntry[];
+}
 
 class IndexedDBRepository {
   private db: IDBDatabase | null = null;
@@ -168,6 +176,35 @@ class IndexedDBRepository {
     });
   }
 
+  async updateWorkout(id: string, updates: Partial<Workout>): Promise<Workout> {
+    if (!this.db) await this.init();
+
+    return new Promise(async (resolve, reject) => {
+      const transaction = this.db!.transaction(['workouts'], 'readwrite');
+      const store = transaction.objectStore('workouts');
+      
+      const getRequest = store.get(id);
+
+      getRequest.onerror = () => reject(getRequest.error);
+      getRequest.onsuccess = () => {
+        const existingWorkout = getRequest.result;
+        if (!existingWorkout) {
+          return reject(new Error(`Treino com id ${id} não encontrado`));
+        }
+
+        const updatedWorkout = {
+          ...existingWorkout,
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        };
+
+        const putRequest = store.put(updatedWorkout);
+        putRequest.onsuccess = () => resolve(updatedWorkout);
+        putRequest.onerror = () => reject(putRequest.error);
+      };
+    });
+  }
+
   // Logs
   async getAllLogs(): Promise<LogEntry[]> {
     if (!this.db) await this.init();
@@ -201,8 +238,8 @@ class IndexedDBRepository {
   }
 
   // Export/Import
-  async exportData(scope: 'all' | 'catalog' | 'workouts' | 'logs' = 'all') {
-    const data: any = {
+  async exportData(scope: 'all' | 'catalog' | 'workouts' | 'logs' = 'all'): Promise<ExportData> {
+    const data: ExportData = {
       version: "1.0.0",
       exportedAt: new Date().toISOString()
     };
@@ -220,7 +257,7 @@ class IndexedDBRepository {
     return data;
   }
 
-  async importData(data: any): Promise<{ success: boolean; errors: string[] }> {
+  async importData(data: ExportData): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
     
     try {

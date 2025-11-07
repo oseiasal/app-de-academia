@@ -26,7 +26,7 @@ export class OfflineRepository {
   };
 
   // Salvar no localStorage
-  static saveToLocal(key: string, data: any) {
+  static saveToLocal(key: string, data: unknown) {
     try {
       localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
@@ -68,7 +68,7 @@ export class OfflineRepository {
   }
 
   // Adicionar à fila de sincronização
-  static addToSyncQueue(endpoint: string, method: string, data: any) {
+  static addToSyncQueue(endpoint: string, method: string, data: unknown) {
     const syncQueue = this.loadFromLocal(this.STORAGE_KEYS.SYNC_QUEUE) || [];
     syncQueue.push({
       id: Date.now(),

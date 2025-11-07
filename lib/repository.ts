@@ -1,5 +1,13 @@
 import { Exercise, Workout, LogEntry, User } from './types';
 
+interface ExportData {
+  version: string;
+  exportedAt: string;
+  catalog?: Exercise[];
+  workouts?: Workout[];
+  logs?: LogEntry[];
+}
+
 // Repository in-memory para desenvolvimento
 class InMemoryRepository {
   private exercises: Exercise[] = [];
@@ -153,8 +161,8 @@ class InMemoryRepository {
   }
 
   // Utilitários
-  exportData(scope: 'all' | 'catalog' | 'workouts' | 'logs' = 'all') {
-    const data: any = {
+  exportData(scope: 'all' | 'catalog' | 'workouts' | 'logs' = 'all'): ExportData {
+    const data: ExportData = {
       version: "1.0.0",
       exportedAt: new Date().toISOString()
     };
@@ -172,14 +180,14 @@ class InMemoryRepository {
     return data;
   }
 
-  importData(data: any): { success: boolean; errors: string[] } {
+  importData(data: ExportData): { success: boolean; errors: string[] } {
     const errors: string[] = [];
     
     try {
       console.log('Importando dados:', data);
       
       if (data.catalog && Array.isArray(data.catalog)) {
-        data.catalog.forEach((exercise: any, index: number) => {
+        data.catalog.forEach((exercise: Exercise, index: number) => {
           try {
             // Validar campos obrigatórios
             if (!exercise.id || !exercise.nome || !exercise.gruposMusculares) {
@@ -204,7 +212,7 @@ class InMemoryRepository {
       }
 
       if (data.workouts && Array.isArray(data.workouts)) {
-        data.workouts.forEach((workout: any, index: number) => {
+        data.workouts.forEach((workout: Workout, index: number) => {
           try {
             if (!workout.id || !workout.blocos) {
               errors.push(`Treino ${index + 1}: campos obrigatórios ausentes (id, blocos)`);
@@ -227,7 +235,7 @@ class InMemoryRepository {
       }
 
       if (data.logs && Array.isArray(data.logs)) {
-        data.logs.forEach((log: any, index: number) => {
+        data.logs.forEach((log: LogEntry, index: number) => {
           try {
             if (!log.workoutId || !log.dataRealizada) {
               errors.push(`Log ${index + 1}: campos obrigatórios ausentes (workoutId, dataRealizada)`);

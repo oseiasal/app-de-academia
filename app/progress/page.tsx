@@ -75,8 +75,6 @@ export default function ProgressPage() {
     filteredLogs.forEach(log => {
       log.setsRealizados.forEach(set => {
         if (set.cargaKg && set.reps) {
-          // Calcular 1RM estimado (fórmula de Epley)
-          const oneRM = set.cargaKg * (1 + set.reps / 30);
           recentPRs.push({
             exerciseId: set.exerciseId,
             reps: set.reps,

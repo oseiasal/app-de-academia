@@ -6,7 +6,7 @@ import { Workout, Exercise } from '../../lib/types';
 
 export default function WorkoutsPage() {
   const [workouts, setWorkouts] = useState<Workout[]>([]);
-  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editingWorkout, setEditingWorkout] = useState<Workout | null>(null);
 
   useEffect(() => {
     fetchWorkouts();
@@ -24,38 +24,49 @@ export default function WorkoutsPage() {
 
   const refreshWorkouts = () => {
     fetchWorkouts();
+    setEditingWorkout(null);
   };
+
+  const handleEdit = (workout: Workout) => {
+    setEditingWorkout(workout);
+  };
+
+  const handleCloseForm = () => {
+    setEditingWorkout(null);
+  };
+
 
   return (
     <div className="container mx-auto p-6">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Meus Treinos</h1>
         <button
-          onClick={() => setShowCreateForm(true)}
+          onClick={() => setEditingWorkout({} as Workout)} // Abre form para criar
           className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
         >
           Novo Treino
         </button>
       </div>
 
-      {showCreateForm && (
+      {editingWorkout && (
         <CreateWorkoutForm 
-          onClose={() => setShowCreateForm(false)}
+          workout={editingWorkout} 
+          onClose={handleCloseForm}
           onSave={refreshWorkouts}
         />
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {workouts.map(workout => (
-          <WorkoutCard key={workout.id} workout={workout} />
+          <WorkoutCard key={workout.id} workout={workout} onEdit={handleEdit} />
         ))}
       </div>
 
-      {workouts.length === 0 && !showCreateForm && (
+      {workouts.length === 0 && !editingWorkout && (
         <div className="text-center py-12">
           <p className="text-gray-500 mb-4">Você ainda não criou nenhum treino.</p>
           <button
-            onClick={() => setShowCreateForm(true)}
+            onClick={() => setEditingWorkout({} as Workout)} // Abre form para criar
             className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700"
           >
             Criar Primeiro Treino
@@ -66,7 +77,7 @@ export default function WorkoutsPage() {
   );
 }
 
-function WorkoutCard({ workout }: { workout: Workout }) {
+function WorkoutCard({ workout, onEdit }: { workout: Workout; onEdit: (workout: Workout) => void; }) {
   const totalExercises = workout.blocos.reduce((sum, bloco) => sum + bloco.exercicios.length, 0);
   
   const handlePrintPDF = () => {
@@ -109,7 +120,9 @@ function WorkoutCard({ workout }: { workout: Workout }) {
         <button className="flex-1 bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700">
           Executar
         </button>
-        <button className="px-4 py-2 border rounded hover:bg-gray-50">
+        <button 
+          onClick={() => onEdit(workout)}
+          className="px-4 py-2 border rounded hover:bg-gray-50">
           Editar
         </button>
       </div>
@@ -124,12 +137,13 @@ function WorkoutCard({ workout }: { workout: Workout }) {
   );
 }
 
-function CreateWorkoutForm({ onClose, onSave }: { onClose: () => void; onSave: () => void }) {
-  const [workoutName, setWorkoutName] = useState('');
-  const [selectedDate, setSelectedDate] = useState('');
-  const [notes, setNotes] = useState('');
+function CreateWorkoutForm({ workout, onClose, onSave }: { workout: Workout, onClose: () => void; onSave: () => void }) {
+  const [workoutName, setWorkoutName] = useState(workout?.nome || '');
+  const [selectedDate, setSelectedDate] = useState(workout?.dataPlanejada || '');
+  const [notes, setNotes] = useState(workout?.notas || '');
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<string[]>(workout?.blocos?.[0]?.exercicios.map(e => e.exerciseId) || []);
+  const isEditing = !!workout?.id;
 
   useEffect(() => {
     fetchExercises();
@@ -149,14 +163,14 @@ function CreateWorkoutForm({ onClose, onSave }: { onClose: () => void; onSave: (
     if (!workoutName.trim()) return;
 
     const workoutData = {
-      id: `workout-${Date.now()}`,
+      id: isEditing ? workout.id : `workout-${Date.now()}`,
       nome: workoutName,
       dataPlanejada: selectedDate || undefined,
       blocos: [{
-        tipo: 'principal',
+        tipo: 'principal' as const,
         exercicios: selectedExercises.map(exerciseId => ({
           exerciseId,
-          series: [{
+          series: workout.blocos?.[0]?.exercicios.find(e => e.exerciseId === exerciseId)?.series || [{
             tipoSerie: 'padrão',
             reps: 10,
             cargaKg: 20,
@@ -169,12 +183,16 @@ function CreateWorkoutForm({ onClose, onSave }: { onClose: () => void; onSave: (
 
     try {
       const repository = await getRepository();
-      await repository.createWorkout(workoutData);
+      if (isEditing) {
+        await repository.updateWorkout(workout.id, workoutData);
+      } else {
+        await repository.createWorkout(workoutData);
+      }
       onSave();
       onClose();
     } catch (error) {
       console.error('Erro ao salvar treino:', error);
-      alert('Erro ao criar treino');
+      alert(`Erro ao ${isEditing ? 'atualizar' : 'criar'} treino`);
     }
   };
 
@@ -182,7 +200,7 @@ function CreateWorkoutForm({ onClose, onSave }: { onClose: () => void; onSave: (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Novo Treino</h2>
+          <h2 className="text-xl font-semibold">{isEditing ? 'Editar Treino' : 'Novo Treino'}</h2>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             ✕
           </button>
@@ -254,7 +272,7 @@ function CreateWorkoutForm({ onClose, onSave }: { onClose: () => void; onSave: (
             disabled={!workoutName.trim()}
             className="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 disabled:bg-gray-300"
           >
-            Criar Treino
+            {isEditing ? 'Salvar Alterações' : 'Criar Treino'}
           </button>
           <button
             onClick={onClose}

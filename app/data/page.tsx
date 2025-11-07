@@ -3,17 +3,28 @@
 import { useState } from 'react';
 import { getRepository } from '../../lib/indexeddb';
 
+interface ImportResult {
+  success: boolean;
+  errors: string[];
+  message?: string;
+  imported?: {
+    exercises: number;
+    workouts: number;
+    logs: number;
+  };
+}
+
 export default function DataPage() {
   const [importing, setImporting] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [importResult, setImportResult] = useState<any>(null);
-  const [selectedScope, setSelectedScope] = useState('all');
+  const [importResult, setImportResult] = useState<ImportResult | null>(null);
+  const [selectedScope, setSelectedScope] = useState<'all' | 'catalog' | 'workouts' | 'logs'>('all');
 
   const handleExport = async () => {
     setExporting(true);
     try {
       const repository = await getRepository();
-      const data = await repository.exportData(selectedScope as any);
+      const data = await repository.exportData(selectedScope);
       
       const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -24,7 +35,7 @@ export default function DataPage() {
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error) {
+    } catch {
       alert('Erro ao exportar dados');
     } finally {
       setExporting(false);
@@ -56,7 +67,7 @@ export default function DataPage() {
       if (result.success) {
         setTimeout(() => window.location.reload(), 2000);
       }
-    } catch (error) {
+    } catch {
       setImportResult({
         success: false,
         errors: ['Arquivo JSON inválido ou corrompido']
@@ -82,7 +93,7 @@ export default function DataPage() {
             <label className="block text-sm font-medium mb-2">Escopo da Exportação</label>
             <select
               value={selectedScope}
-              onChange={(e) => setSelectedScope(e.target.value)}
+              onChange={(e) => setSelectedScope(e.target.value as 'all' | 'catalog' | 'workouts' | 'logs')}
               className="w-full p-2 border rounded-md"
             >
               <option value="all">Todos os dados</option>
@@ -139,9 +150,9 @@ export default function DataPage() {
 
           {importResult && (
             <div className={`border-l-4 p-4 mb-4 ${
-              (importResult.success !== false && !importResult.error) ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
+              (importResult.success !== false && importResult.errors.length === 0) ? 'bg-green-100 border-green-500' : 'bg-red-100 border-red-500'
             }`}>
-              {(importResult.success !== false && !importResult.error) ? (
+              {(importResult.success !== false && importResult.errors.length === 0) ? (
                 <div>
                   <p className="text-green-700 font-medium">
                     {importResult.message || 'Importação realizada com sucesso!'}

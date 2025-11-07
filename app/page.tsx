@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 export default function Home() {
   return (
     <div className="container mx-auto p-6">
@@ -15,12 +17,12 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               Explore nossa biblioteca completa de exercícios
             </p>
-            <a 
+            <Link 
               href="/exercises"
               className="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
             >
               Ver Exercícios
-            </a>
+            </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border">
@@ -28,12 +30,12 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               Templates por objetivo criados por especialistas
             </p>
-            <a 
+            <Link 
               href="/templates"
               className="inline-block bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
             >
               Ver Templates
-            </a>
+            </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border">
@@ -41,12 +43,12 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               Crie e gerencie seus treinos personalizados
             </p>
-            <a 
+            <Link 
               href="/workouts"
               className="inline-block bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
             >
               Meus Treinos
-            </a>
+            </Link>
           </div>
 
           <div className="bg-white p-6 rounded-lg shadow-md border">
@@ -54,12 +56,12 @@ export default function Home() {
             <p className="text-gray-600 mb-4">
               Acompanhe seu cronograma de treinos
             </p>
-            <a 
+            <Link 
               href="/calendar"
               className="inline-block bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700"
             >
               Ver Agenda
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -92,18 +94,18 @@ export default function Home() {
         <div className="mt-8 text-center">
           <h2 className="text-xl font-semibold mb-4">Comece Agora</h2>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a 
+            <Link 
               href="/templates"
               className="bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 font-medium"
             >
               🏃‍♂️ Usar Treino Pronto
-            </a>
-            <a 
+            </Link>
+            <Link 
               href="/workouts"
               className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-medium"
             >
               ⚡ Criar Treino Personalizado
-            </a>
+            </Link>
           </div>
         </div>
       </div>

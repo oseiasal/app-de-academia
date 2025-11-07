@@ -14,7 +14,7 @@ export default function TemplatesPage() {
     return true;
   });
 
-  const useTemplate = async (template: WorkoutTemplate) => {
+  const handleUseTemplate = async (template: WorkoutTemplate) => {
     try {
       const repository = await getRepository();
       
@@ -84,7 +84,7 @@ export default function TemplatesPage() {
           <TemplateCard 
             key={template.id} 
             template={template} 
-            onUse={() => useTemplate(template)} 
+            onUse={() => handleUseTemplate(template)} 
           />
         ))}
       </div>
@@ -199,7 +199,7 @@ function TemplateCard({
                   • Exercício ID: {exercicio.exerciseId} ({exercicio.series.length} séries)
                   {exercicio.observacoes && (
                     <div className="text-xs text-gray-500 ml-2">
-                      "{exercicio.observacoes}"
+                      &quot;{exercicio.observacoes}&quot;
                     </div>
                   )}
                 </div>

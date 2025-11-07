@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Script from "next/script";
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,9 +18,14 @@ export const metadata: Metadata = {
   title: "App de Academia",
   description: "Aplicativo para praticantes, personal trainers e academias",
   manifest: "/manifest.json",
-  themeColor: "#2563eb",
-  viewport: "width=device-width, initial-scale=1, viewport-fit=cover",
 };
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+}
 
 export default function RootLayout({
   children,
@@ -36,13 +42,13 @@ export default function RootLayout({
             <div className="flex justify-between items-center">
               <h1 className="text-xl font-bold text-gray-800">App de Academia</h1>
               <div className="flex space-x-6">
-                <a href="/" className="text-gray-600 hover:text-gray-800">Início</a>
-                <a href="/exercises" className="text-gray-600 hover:text-gray-800">Exercícios</a>
-                <a href="/templates" className="text-gray-600 hover:text-gray-800">Templates</a>
-                <a href="/workouts" className="text-gray-600 hover:text-gray-800">Treinos</a>
-                <a href="/calendar" className="text-gray-600 hover:text-gray-800">Calendário</a>
-                <a href="/progress" className="text-gray-600 hover:text-gray-800">Progresso</a>
-                <a href="/data" className="text-gray-600 hover:text-gray-800">Dados</a>
+                <Link href="/" className="text-gray-600 hover:text-gray-800">Início</Link>
+                <Link href="/exercises" className="text-gray-600 hover:text-gray-800">Exercícios</Link>
+                <Link href="/templates" className="text-gray-600 hover:text-gray-800">Templates</Link>
+                <Link href="/workouts" className="text-gray-600 hover:text-gray-800">Treinos</Link>
+                <Link href="/calendar" className="text-gray-600 hover:text-gray-800">Calendário</Link>
+                <Link href="/progress" className="text-gray-600 hover:text-gray-800">Progresso</Link>
+                <Link href="/data" className="text-gray-600 hover:text-gray-800">Dados</Link>
               </div>
             </div>
           </div>

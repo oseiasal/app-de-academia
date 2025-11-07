@@ -1,9 +1,17 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { getRepository } from '../../../lib/indexeddb';
-import { Workout, Exercise, LogEntry } from '../../../lib/types';
+import { Workout, Exercise, Set as WorkoutSet } from '../../../lib/types';
+
+interface CompletedSet {
+  exerciseId: string;
+  serieIndex: number;
+  reps: number;
+  cargaKg?: number;
+  rpe?: number;
+}
 
 export default function WorkoutExecutionPage() {
   const params = useParams();
@@ -15,13 +23,9 @@ export default function WorkoutExecutionPage() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [restTimer, setRestTimer] = useState(0);
   const [isResting, setIsResting] = useState(false);
-  const [completedSets, setCompletedSets] = useState<any[]>([]);
+  const [completedSets, setCompletedSets] = useState<CompletedSet[]>([]);
 
-  useEffect(() => {
-    fetchWorkoutData();
-  }, [workoutId]);
-
-  const fetchWorkoutData = async () => {
+  const fetchWorkoutData = useCallback(async () => {
     try {
       const repository = await getRepository();
       const workoutData = await repository.getWorkoutById(workoutId);
@@ -49,7 +53,11 @@ export default function WorkoutExecutionPage() {
     } catch (error) {
       console.error('Erro ao carregar dados do treino:', error);
     }
-  };
+  }, [workoutId]);
+
+  useEffect(() => {
+    fetchWorkoutData();
+  }, [fetchWorkoutData]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -80,7 +88,7 @@ export default function WorkoutExecutionPage() {
   const completeSet = (reps: number, weight: number, rpe?: number) => {
     if (!currentExercise || !workout) return;
 
-    const completedSet = {
+    const completedSet: CompletedSet = {
       exerciseId: currentExercise.exerciseId,
       serieIndex: currentSetIndex,
       reps,
@@ -237,7 +245,7 @@ function SetRegistrationForm({
   plannedSet, 
   onComplete 
 }: { 
-  plannedSet: any; 
+  plannedSet: WorkoutSet; 
   onComplete: (reps: number, weight: number, rpe?: number) => void;
 }) {
   const [reps, setReps] = useState(plannedSet?.reps || '');
@@ -246,9 +254,9 @@ function SetRegistrationForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const repsNum = parseInt(reps) || 0;
-    const weightNum = parseFloat(weight) || 0;
-    const rpeNum = rpe ? parseInt(rpe) : undefined;
+    const repsNum = parseInt(String(reps)) || 0;
+    const weightNum = parseFloat(String(weight)) || 0;
+    const rpeNum = rpe ? parseInt(String(rpe)) : undefined;
     
     onComplete(repsNum, weightNum, rpeNum);
     

@@ -5,17 +5,16 @@ on:
   schedule:
     - cron: "0 23 * * *"  # roda todos os dias às 20h no horário de Brasília (UTC-3)
 
+permissions:
+  issues: write  # 👈 Permite criar e editar issues
+  contents: read # Leitura básica do repositório
+
 jobs:
   processar:
     runs-on: ubuntu-latest
     steps:
       - name: Baixar repositório
         uses: actions/checkout@v4
-
-      - name: Instalar CLI do GitHub
-        uses: cli/cli@v2
-        with:
-          version: latest
 
       - name: Processar issues com deploy agendado
         env:

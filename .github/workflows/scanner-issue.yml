@@ -8,6 +8,7 @@ on:
 permissions:
   issues: write  # 👈 Permite criar e editar issues
   contents: read # Leitura básica do repositório
+  actions: write # Permite disparar outros workflows
 
 jobs:
   processar:

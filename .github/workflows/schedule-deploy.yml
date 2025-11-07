@@ -6,14 +6,18 @@ on:
       tag:
         description: "Tag para deploy (ex: v1.8.0)"
         required: true
-      date:
-        description: "Data do deploy (YYYY-MM-DD)"
+      data_local:
+        description: "Data do deploy no formato local (DD-MM-YYYY)"
         required: true
-        default: "2025-11-07"
-      time:
-        description: "Hora do deploy em UTC (HH:mm)"
+        default: "07-11-2025"
+      hora_local:
+        description: "Hora do deploy no formato local (HH:mm)"
         required: true
-        default: "23:30"
+        default: "20:30"
+      fuso_horario:
+        description: "Seu fuso horário (ex: America/Sao_Paulo, America/New_York)"
+        required: true
+        default: "America/Sao_Paulo"
 
 permissions:
   issues: write  # 👈 Permite criar e editar issues
@@ -23,17 +27,54 @@ jobs:
   criar_issue:
     runs-on: ubuntu-latest
     steps:
-      - name: Criar issue de agendamento
-        uses: actions/github-script@v6
+      - name: 1. Converter data/hora local para UTC
+        id: convert_time
+        run: |
+          # Reorganiza a data de DD-MM-YYYY para YYYY-MM-DD, que o comando `date` entende melhor.
+          reformatted_date=$(echo "${{ inputs.data_local }}" | awk -F- '{print $3"-"$2"-"$1}')
+          
+          # Constrói a string de data e hora completa.
+          full_datetime="$reformatted_date ${{ inputs.hora_local }}"
+          
+          # Usa o comando `date`, especificando o fuso horário de entrada (TZ)
+          # e pedindo a saída em UTC (-u) no formato ISO 8601.
+          utc_time=$(TZ="${{ inputs.fuso_horario }}" date -d "$full_datetime" -u +'%Y-%m-%dT%H:%M:%S_Z_')
+          
+          # Disponibiliza a variável para os próximos steps.
+          echo "utc_time=$utc_time" >> $GITHUB_OUTPUT
+
+      - name: 2. Criar issue de agendamento com horário em UTC
+        uses: actions/github-script@v7
         with:
           script: |
-            github.rest.issues.create({
+            const utcTime = "${{ steps.convert_time.outputs.utc_time }}".replace("_", "");
+            const tag = "${{ inputs.tag }}";
+            
+            const issueBody = `**Tag para deploy:** ${tag}
+            **Horário agendado (UTC):** ${utcTime}
+            
+            Agendado via formulário com os seguintes dados locais:
+            - **Data Local:** ${{ inputs.data_local }}
+            - **Hora Local:** ${{ inputs.hora_local }}
+            - **Fuso Horário:** ${{ inputs.fuso_horario }}
+            
+            ---
+            Este deploy será executado automaticamente.
+            
+            <!--
+            \`\`\`json
+            {
+              "tag": "${tag}",
+              "schedule_time": "${utcTime}"
+            }
+            \`\`\`
+            -->
+            `;
+
+            await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: `Deploy agendado - ${context.payload.inputs.tag}`,
-              body: `**Tag:** ${context.payload.inputs.tag}
-              **Horário agendado:** ${context.payload.inputs.date}T${context.payload.inputs.time}:00Z
-              
-              Este deploy será executado automaticamente no horário especificado.`,
+              title: `Deploy agendado - ${tag}`,
+              body: issueBody,
               labels: ['deploy-agendado']
             });

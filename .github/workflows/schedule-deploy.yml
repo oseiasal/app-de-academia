@@ -15,6 +15,10 @@ on:
         required: true
         default: "23:30"
 
+permissions:
+  issues: write  # 👈 Permite criar e editar issues
+  contents: read # Leitura básica do repositório
+
 jobs:
   criar_issue:
     runs-on: ubuntu-latest

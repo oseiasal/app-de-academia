@@ -7,15 +7,18 @@ on:
 
 permissions:
   issues: write  # 👈 Permite criar e editar issues
-  contents: read # Leitura básica do repositório
+  contents: write # Adicionado para permitir a criação de tags
   actions: write # Permite disparar outros workflows
 
 jobs:
   processar:
     runs-on: ubuntu-latest
     steps:
+      # O checkout agora precisa de fetch-depth: 0 para que o git tenha o histórico de tags
       - name: Baixar repositório
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Processar issues com deploy agendado
         env:
@@ -33,8 +36,6 @@ jobs:
             number=$(echo "$issue" | jq -r '.number')
             body=$(echo "$issue" | jq -r '.body')
 
-            # Usa awk para extrair o conteúdo do bloco de código JSON de forma segura.
-            # Ele começa a imprimir após a linha com ```json e para na próxima linha com ```.
             json_block=$(echo "$body" | awk '/```json/{p=1;next} /```/{p=0} p')
 
             if [ -z "$json_block" ]; then
@@ -42,7 +43,6 @@ jobs:
               continue
             fi
 
-            # Usa jq para extrair os dados. O '|| "null"' garante que a variável não fique vazia.
             tag=$(echo "$json_block" | jq -r '.tag // "null"')
             time=$(echo "$json_block" | jq -r '.schedule_time // "null"')
 
@@ -54,7 +54,6 @@ jobs:
             fi
 
             now=$(date -u +%s)
-            # Adiciona verificação se a data é válida antes de tentar converter
             if ! end=$(date -d "$time" +%s 2>/dev/null); then
               echo "❌ Issue #$number: Formato de 'schedule_time' inválido: $time. Pulando."
               continue
@@ -63,9 +62,26 @@ jobs:
             echo "🕒 Issue #$number → Tag: $tag / Agendado para: $time"
 
             if [ $now -ge $end ]; then
-              echo "🚀 Executando deploy da tag $tag..."
+              echo "✅ Hora do deploy. Criando a tag '$tag'..."
+
+              # Configura o Git com um usuário bot
+              git config user.name "GitHub Actions Bot"
+              git config user.email "actions-bot@github.com"
+
+              # Verifica se a tag já existe antes de tentar criar
+              if git rev-parse "$tag" >/dev/null 2>&1; then
+                  echo "⚠️ A tag $tag já existe. Pulando a criação, mas continuando com o deploy."
+              else
+                  # Cria a tag no commit mais recente (HEAD)
+                  git tag "$tag"
+                  # Empurra a nova tag para o repositório remoto
+                  git push origin "$tag"
+                  echo "✅ Tag $tag criada e enviada para o repositório."
+              fi
+
+              echo "🚀 Disparando deploy da tag $tag..."
               gh workflow run "Deploy Frontend Service - Dev" -f tag="$tag"
-              gh issue close "$number" --comment "✅ Deploy executado automaticamente."
+              gh issue close "$number" --comment "✅ Tag '$tag' criada e deploy disparado automaticamente."
             else
               echo "⏳ Ainda não é hora do deploy (falta $((end - now)) segundos)."
             fi

@@ -37,8 +37,8 @@ jobs:
           full_datetime="$reformatted_date ${{ inputs.hora_local }}"
           
           # Usa o comando `date`, especificando o fuso horário de entrada (TZ)
-          # e pedindo a saída em UTC (-u) no formato ISO 8601.
-          utc_time=$(TZ="${{ inputs.fuso_horario }}" date -d "$full_datetime" -u +'%Y-%m-%dT%H:%M:%S_Z_')
+          # e pedindo a saída em UTC (-u) no formato padrão ISO 8601.
+          utc_time=$(TZ="${{ inputs.fuso_horario }}" date -d "$full_datetime" -u +'%Y-%m-%dT%H:%M:%SZ')
           
           # Disponibiliza a variável para os próximos steps.
           echo "utc_time=$utc_time" >> $GITHUB_OUTPUT
@@ -47,7 +47,7 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
-            const utcTime = "${{ steps.convert_time.outputs.utc_time }}".replace("_", "");
+            const utcTime = "${{ steps.convert_time.outputs.utc_time }}";
             const tag = "${{ inputs.tag }}";
             
             const issueBody = `**Tag para deploy:** ${tag}

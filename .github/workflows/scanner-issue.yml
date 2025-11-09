@@ -2,8 +2,8 @@ name: Executar Deploys Agendados
 
 on:
   workflow_dispatch:  # permite execução manual
-  schedule:
-    - cron: "*/10 * * * *"  # roda todos os dias às 20h no horário de Brasília (UTC-3)
+  # schedule:
+    # - cron: "*/10 * * * *"  # roda todos os dias às 20h no horário de Brasília (UTC-3)
 
 permissions:
   issues: write  # 👈 Permite criar e editar issues
@@ -22,27 +22,50 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           echo "🔍 Buscando issues com label 'deploy-agendado'..."
-          issues=$(gh issue list --label "deploy-agendado" --json number,title,body,state)
+          issues=$(gh issue list --label "deploy-agendado" --json number,body)
 
-          if [ "$(echo $issues | jq length)" -eq 0 ]; then
+          if [ "$(echo "$issues" | jq 'length')" -eq 0 ]; then
             echo "✅ Nenhum deploy agendado encontrado."
             exit 0
           fi
 
-          echo "$issues" | jq -c '.[]' | while read issue; do
-            number=$(echo $issue | jq -r '.number')
-            tag=$(echo $issue | jq -r '.body' | grep "tag:" | awk '{print $2}')
-            time=$(echo $issue | jq -r '.body' | grep "schedule_time:" | awk '{print $2}')
+          echo "$issues" | jq -c '.[]' | while read -r issue; do
+            number=$(echo "$issue" | jq -r '.number')
+            body=$(echo "$issue" | jq -r '.body')
+
+            # Usa awk para extrair o conteúdo do bloco de código JSON de forma segura.
+            # Ele começa a imprimir após a linha com ```json e para na próxima linha com ```.
+            json_block=$(echo "$body" | awk '/```json/{p=1;next} /```/{p=0} p')
+
+            if [ -z "$json_block" ]; then
+              echo "⚠️ Issue #$number: Nenhum bloco JSON encontrado no corpo. Pulando."
+              continue
+            fi
+
+            # Usa jq para extrair os dados. O '|| "null"' garante que a variável não fique vazia.
+            tag=$(echo "$json_block" | jq -r '.tag // "null"')
+            time=$(echo "$json_block" | jq -r '.schedule_time // "null"')
+
+            if [ "$tag" = "null" ] || [ "$time" = "null" ]; then
+              echo "❌ Issue #$number: Falha ao analisar tag ou schedule_time do bloco JSON. Pulando."
+              echo "Bloco JSON encontrado:"
+              echo "$json_block"
+              continue
+            fi
 
             now=$(date -u +%s)
-            end=$(date -d "$time" +%s)
+            # Adiciona verificação se a data é válida antes de tentar converter
+            if ! end=$(date -d "$time" +%s 2>/dev/null); then
+              echo "❌ Issue #$number: Formato de 'schedule_time' inválido: $time. Pulando."
+              continue
+            fi
 
             echo "🕒 Issue #$number → Tag: $tag / Agendado para: $time"
 
             if [ $now -ge $end ]; then
               echo "🚀 Executando deploy da tag $tag..."
               gh workflow run "Deploy Frontend Service - Dev" -f tag="$tag"
-              gh issue close "$number" -c "✅ Deploy executado automaticamente."
+              gh issue close "$number" --comment "✅ Deploy executado automaticamente."
             else
               echo "⏳ Ainda não é hora do deploy (falta $((end - now)) segundos)."
             fi
